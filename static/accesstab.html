@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <title>labas-controller</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+    <link rel="stylesheet" type="text/css" href="/static/common/css/styleblue.css" media="screen"
+          title="style (screen)" />
+    <link rel="stylesheet" type="text/css" href="/static/common/css/labas.css" media="screen" />
+    <script src="/static/codebase/dhtmlxcommon.js"></script>
+    <script src="/static/codebase/dhtmlxtabbar.js"></script>
+    <link rel="stylesheet" href="/static/common/css/style.css" type="text/css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/static/codebase/dhtmlxtabbar.css">
+
+</head>
+
+<body>
+<div id="preload"></div>
+<div id="header">
+    <h5>Санкт-Петербургский государственный политехнический университет</h5>
+
+    <div class="logo"><img src="/static/i/spbspu-logo.png" alt=""></div>
+    <h1>LABAS<span>Система виртуальных лабораторий</span></h1>
+</div>
+<div id="menu">
+    <ul>
+        <li><a href="/static/devicelist.html">Устройства</a></li>
+        <li><a href="/static/topology.html">Топология</a></li>
+        <li class="current"><a href="/static/accesstab.html">Доступ</a></li>
+        <li><a href="/static/settings.html">Настройка</a></li>
+    </ul>
+</div>
+<div id="main">
+    <div id="content">
+        <div class="content-wrapper">
+            <h1>Доступ</h1>
+
+
+
+            <div id="a_tabbar" style="width:803px; height:630px;" ></div>
+            <script>
+
+                tabbar = new dhtmlXTabBar("a_tabbar", "top");
+                tabbar.setSkin('modern');
+                tabbar.setImagePath("/static/codebase/imgs/");
+                //tabbar.setHrefMode("ajax-html");
+
+                function setTabContent(tabname, devname) {
+                    var loader = dhtmlxAjax.getSync("/access?name=" + devname);
+                    var proto = loader.doXPath("/device/access/proto")[0].firstChild.nodeValue;
+                    var address = loader.doXPath("/device/access/address")[0].firstChild.nodeValue;
+                    var state = loader.doXPath("/device/access/state")[0].firstChild.nodeValue;
+                    var servername;
+                    if (address.split(':')[0] == "0.0.0.0")
+                        servername = location.hostname;
+                    else
+                        servername = address.split(':')[0];
+                    var serverport = address.split(':')[1];
+//		    alert(serverport);
+                    if (state == 'idle') {
+                        tabbar.setContentHTML(tabname, '<h2>Device is not running; connection refused</h2>');
+                    } else if (state == 'failed') {
+                        tabbar.setContentHTML(tabname, '<h2>Device is broken; connection refused</h2>');
+                    } else {
+                        if (proto == 'none') {
+                            tabbar.setContentHTML(tabname, '<h2>Device access forbidden</h2>');
+                        }
+                        if (proto == 'telnet') {
+                            var content =
+                                    '<html><head></head><body onload="self.focus()">' +
+                                            '<applet CODEBASE="/static/codebase"' +
+                                            'ARCHIVE="mindterm.jar"' +
+                                            'CODE="com.mindbright.application.MindTermTelnet.class"' +
+                                            'WIDTH="800" HEIGHT="600">' +
+                                            '<param name="server" value= ' + "\"" + servername + ':' + serverport + "\"" +
+                                            '<param name="quiet" value="true">' +
+                                            '<param name="scrollbar" value="right">' +
+                                            '<param name="fg-color" value="black">' +
+                                            '<param name="bg-color" value="white">' +
+                                            '<param name="font-size" value="16">' +
+                                            '<param name="repos-input" value="true">' +
+                                            '<param name="repos-output" value="true">' +
+                                            '<param name="paste-button" value="middle">' +
+                                            '<param name="copy-select" value="true">' +
+                                            '<param name="commandline" value="\r\n">' +
+                                            '<param name="force-pty" value="true">' +
+
+                                            '</applet></body></html>';
+                            tabbar.setContentHTML(tabname, content);
+                        } else {
+                            tabbar.setContentHTML(tabname, '<h2>Access protocol not supported</h2>');
+                        }
+                    }
+                }
+
+                function detectkeys(e) {
+                    var evtobj = window.event ? event : e;
+                    if (evtobj.keyCode == 37 && evtobj.shiftKey)
+                        tabbar.goToPrevTab();
+                    if (evtobj.keyCode == 39 && evtobj.shiftKey)
+                        tabbar.goToNextTab();
+
+                }
+
+                function tabSelectHandler() {
+                    alert((tabbar.getActiveTab()));
+                }
+
+                document.onkeypress = detectkeys;
+
+                function outputResponse(loader) {
+                    if (loader.xmlDoc.responseXML != null) {
+                        xmlDoc = loader.xmlDoc.responseXML;
+                        var devices = xmlDoc.getElementsByTagName("device");
+                        var devname;
+                        for (var i = 0; i < devices.length; i++) {
+                            devname = devices[i].getAttribute("name");
+                            tabbar.addTab(devname, devname, "100px");
+                            setTabContent(devname, devname);
+                            //alert("/interface/access?name="+devname);
+                        }
+                        //tabbar.attachEvent("onSelect", tabSelectHandler);
+                        tabbar.setTabActive(devname);
+                    } else
+                        alert("Response contains no XML");
+                }
+
+                function sendRequestGet() {
+                    var loader = dhtmlxAjax.getSync("/device");
+                    //alert("Request Sent");
+                    outputResponse(loader);
+                }
+
+                sendRequestGet();
+
+            </script>
+        </div>
+    </div>
+</div>
+
+<div id="footer">
+    <a rel="nofollow" target="_blank" href="http://www.avalon.ru">ФПС СПбГПУ</a></div>
+</div>
+
+</div>
+</div>
+</body>
+</html>
+ 
+ 

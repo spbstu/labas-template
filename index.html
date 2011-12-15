@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+	<head>
+		<title>Drag and Drop between Grids</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="featured" content="yes"><meta name="title" content="Samples" />
+		<meta name="keywords" content="" />
+		<meta name="description" content="" />
+		<link rel="icon" href="common/favicon.ico" type="image/x-icon" />
+		<link rel="shortcut icon" href="common/favicon.ico" type="image/x-icon" />
+		<link rel="stylesheet" href="common/css/style.css" type="text/css" media="screen" />
+
+	</head>
+	<body>
+
+        <div class="content">
+            
+        <link rel="STYLESHEET" type="text/css" href="codebase/dhtmlxgrid.css">
+	<link rel="stylesheet" type="text/css" href="codebase/skins/dhtmlxgrid_dhx_skyblue.css">
+	<link rel="stylesheet" type="text/css" href="dhtmlxMenu/codebase/skins/dhtmlxmenu_dhx_skyblue.css">
+	<script  src="codebase/dhtmlxcommon.js"></script>
+	<script  src="codebase/dhtmlxgrid.js"></script>		
+	<script  src="codebase/dhtmlxgridcell.js"></script>	
+	<script  src="codebase/ext/dhtmlxgrid_drag.js"></script>
+	<script  src="codebase/excells/dhtmlxgrid_excell_link.js"></script>
+	<script language="JavaScript" src="dhtmlxMenu/codebase/dhtmlxmenu.js"></script>
+	<h5>Drag and Drop between Grids</h5>
+	<p>
+        dhtmlxGrid supports drag-n-drop not only within one grid, but between grids as well. Check out this functionality in the sample below.
+	</p>
+	<table width="800px">
+		<tr>
+            <td>
+				<div id="gridbox2" style="width:270px;height:270px;background-color:white;"></div>
+            </td>
+			<td>
+				<div id="gridbox3" style="width:800px;height:600px;background-color:white;"></div>
+			</td>
+		</tr>
+	</table>
+<script>
+		function onButtonClick(menuitemId, type) {
+			alert(menuitemId + '___' + type);
+//			var data = mygrid.contextID.split("_");
+//			mygrid.setRowTextStyle(data[0], "color:" + menuitemId.split("_")[1]);
+			return true;
+		}
+		menu = new dhtmlXMenuObject();
+		menu.setIconsPath("images/");
+		menu.renderAsContextMenu();
+		menu.attachEvent("onClick", onButtonClick);
+		menu.loadXML("_context.xml");
+
+		mygrid= new dhtmlXGridObject('gridbox3');
+		mygrid.xml.top="network"
+		mygrid.enableContextMenu(menu);
+		mygrid.selMultiRows = true;
+
+		mygrid.setImagePath("codebase/imgs/");
+		mygrid.setHeader("Img,Id, Name, Model");
+		mygrid.setInitWidths("150, 150, 150, 150")
+		mygrid.setColAlign("center,center,center,center")
+		mygrid.setColTypes("img,ed,ed,ed");
+		mygrid.setColSorting("date,str,str, str")
+		mygrid.enableAutoWidth(true);
+		mygrid.enableAutoHeight(true);
+
+		mygrid._process_custom_xml=function(xml) {
+			this._parsing=true;
+			var rows = xml.doXPath("//device"); // get all row elements from XML
+			for (var i = 0; i < rows.length; i++) {
+				var serial = this.xmlLoader.doXPath("./description/serialNumber", rows[i])[0];
+				var id = serial.firstChild.data;//custom ones will be generated
+				this.rowsBuffer[i]={   // store references to each row element
+					idd: id,
+					data: rows[i],
+					_parser: this._process_custom_xml_row,   // cell parser method
+					_locator: this._get_custom_xml_data        // data locator method
+				};
+				this.rowsAr[id]=rows[i];// store id reference
+			}
+			this.render_dataset();// force update of grid's view after data loading
+			this._parsing=false;
+		}
+
+		mygrid._process_custom_xml_row=function(r, xml) {
+			
+			var frName = this.xmlLoader.doXPath("./description/friendlyName", xml)[0];
+//alert(frName.firstChild.data);
+			var modelName = this.xmlLoader.doXPath("./description/modelName", xml)[0];
+			var imgUrl = this.xmlLoader.doXPath("./description/imageURL", xml)[0];
+//alert(imgUrl.firstChild.data);
+			var strAr = [  
+				imgUrl.firstChild.data,
+				xml.getAttribute("name"),
+				frName.firstChild.data,
+				modelName.firstChild.data,
+			];
+			// set just a plain array as no custom attributes are needed
+			r._attrs={};
+			for (j=0; j < r.childNodes.length; j++) r.childNodes[j]._attrs={};
+			// finish data loading 
+			this._fillRow(r, strAr);
+			return r;
+		}
+
+		
+		mygrid.setMultiLine(false);
+		mygrid.enableDragAndDrop(true);
+		mygrid.init();
+		mygrid.setSkin("dhx_skyblue");
+	   	mygrid.load("net.xml", "custom_xml");
+
+</script>
+
+         </div>
+
+
+    <div class="footer">
+        <div class="footer-logo"></div>
+        <div class="copyright">Copyright &copy; 1998-2009 DHTMLX LTD.<br />All rights reserved.</div>
+    </div>
+	</body>
+</html>

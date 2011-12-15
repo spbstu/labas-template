@@ -1,0 +1,44 @@
+<html><head></head><body>
+<script  src="/static/codebase/dhtmlxcommon.js"></script>
+<script>
+//alert(location);
+  var loader = dhtmlxAjax.getSync("/access" + location.search);
+  var proto = loader.doXPath("/device/access/proto")[0].firstChild.nodeValue;
+//  var proto = result[0].findChild("proto").nodeValue;
+//alert(proto);
+  var address = loader.doXPath("/device/access/address")[0].firstChild.nodeValue;
+  var state = loader.doXPath("/device/access/state")[0].firstChild.nodeValue;
+  var servername;
+  if (address.split(':')[0] == "0.0.0.0")
+      servername = location.hostname;
+  else
+      servername = address.split(':')[0];
+  var serverport = address.split(':')[1];
+//  alert(serverport);
+  if (state == 'idle') {
+    document.write('<h2>Device is not running; connection refused</h2>');
+  } else if (state == 'failed') {
+    document.write('<h2>Device is broken; connection refused</h2>');
+  } else {
+	if (proto == 'none') {
+		document.write('<h2>Device access forbidden</h2>');
+	} if (proto == 'telnet') {
+		document.write('<applet CODEBASE="/static/codebase"' +
+				'ARCHIVE="mindterm.jar"' +
+				'CODE="com.mindbright.application.MindTermTelnet.class"' +
+				'WIDTH="800" HEIGHT="600">');
+		
+		document.write('<param name="server" value= ' + "\"" + servername + ':' + serverport + "\"");
+		document.write('<param name="quiet" value="true">');
+		document.write('<param name="scrollbar" value="right">');
+		document.write('<param name="fg-color" value="black">');
+		document.write('<param name="bg-color" value="white">');
+		document.write('<param name="font-size" value="18">');
+		document.write('</applet>');
+	} else {
+		document.write('<h2>Access protocol not supported</h2>');
+	}
+  }
+</script>
+</body></html>
+

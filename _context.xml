@@ -1,0 +1,10 @@
+<?xml version='1.0' ?>
+<menu id="0">
+		<item text="Launch" img="start.png"  id="launch"/>	
+		<item text="Stop" img="stop.png"  id="stop"/>	
+		<item text="Restart" img="reload.png"  id="restart"/>	
+	<item text="Other..." img="" id="outher">
+		<item text="Save" img="save.png"  id="save"/>	
+		<item text="Restore" img="restore.png"  id="restore"/>	
+	</item>
+</menu>

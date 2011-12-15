@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+	<head>
+		<title>Drag and Drop between Grids</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="featured" content="yes"><meta name="title" content="Samples" />
+		<meta name="keywords" content="" />
+		<meta name="description" content="" />
+		<link rel="icon" href="../static/common/favicon.ico" type="image/x-icon" />
+		<link rel="shortcut icon" href="../static/common/favicon.ico" type="image/x-icon" />
+		<link rel="stylesheet" href="../static/common/css/style.css" type="text/css" media="screen" />
+
+	</head>
+	<body>
+
+        <div class="content">
+            
+        <link rel="STYLESHEET" type="text/css" href="../static/codebase/dhtmlxgrid.css">
+	<link rel="stylesheet" type="text/css" href="../static/codebase/skins/dhtmlxgrid_dhx_skyblue.css">
+	<link rel="stylesheet" type="text/css" href="../static/codebase/skins/dhtmlxmenu_dhx_skyblue.css">
+	<script  src="../static/codebase/dhtmlxcommon.js"></script>
+	<script  src="../static/codebase/dhtmlxgrid.js"></script>		
+	<script  src="../static/codebase/dhtmlxgridcell.js"></script>	
+	<script  src="../static/codebase/ext/dhtmlxgrid_drag.js"></script>
+	<script  src="../static/codebase/excells/dhtmlxgrid_excell_link.js"></script>
+	<script language="JavaScript" src="../static/codebase/dhtmlxmenu.js"></script>
+	<h5>Device list</h5>
+
+	<table width="800px">
+	<tr>
+
+		<td>
+			<div id="devicesGrid" style="width:800px;height:600px;background-color:white;"></div>
+		</td>
+	</tr>
+	</table>
+	<script>
+		function onButtonClick(menuitemId, type) {
+			//alert(menuitemId + '___' + type);
+			var uuid = type.split('_')[0];
+			//alert("/control?id=" + uuid + "&command=" + menuitemId);
+			var loader = dhtmlxAjax.getSync("/control?id=" + uuid + "&command=" + menuitemId);
+			if (loader.xmlDoc.status == 200) {
+				//mygrid.clearAll();
+				//alert("Reloading...");
+				mygrid.updateFromXML("/device", false, false);
+			} else if (loader.xmlDoc.status == 500) {
+				alert(loader.xmlDoc.responseText);
+				//mygrid.clearAll();
+				mygrid.updateFromXML("/device", false, false);
+			} else {
+				//alert("Response contains no XML");
+				alert(loader.xmlDoc.responseText);
+				alert(loader.xmlDoc.status);
+			}
+//			var data = mygrid.contextID.split("_");
+//			mygrid.setRowTextStyle(data[0], "color:" + menuitemId.split("_")[1]);
+			return true;
+		}
+
+		function reloadGrid(loader) {
+			
+		}
+
+		menu = new dhtmlXMenuObject();
+		menu.setIconsPath("/static/images/");
+		menu.renderAsContextMenu();
+		menu.attachEvent("onClick", onButtonClick);
+		menu.loadXML("/static/_context.xml");
+
+		mygrid = new dhtmlXGridObject('devicesGrid');
+		mygrid.xml.top="network"
+		mygrid.enableContextMenu(menu);
+		mygrid.selMultiRows = true;
+
+		mygrid.setImagePath("/static/codebase/imgs/");
+		mygrid.setHeader(",Name, State, Type, Model");
+		mygrid.setInitWidths("100, 100, 100, 100, 100")
+		mygrid.setColAlign("center,center,center, center,center")
+		mygrid.setColTypes("img,ed,ed,ed,ed");
+		mygrid.setColSorting("date,str,str,str, str")
+		mygrid.enableAutoWidth(true);
+		mygrid.enableAutoHeight(true);
+
+		mygrid._process_custom_xml=function(xml) {
+			this._parsing=true;
+			var rows = xml.doXPath("//device"); // get all row elements from XML
+			for (var i = 0; i < rows.length; i++) {
+				var uuid = rows[i].getAttribute("uuid");
+				//alert(uuid);
+				//var serial = this.xmlLoader.doXPath("./description/serialNumber", rows[i])[0];
+				//var id = serial.firstChild.data;//custom ones will be generated
+				this.rowsBuffer[i]={   // store references to each row element
+					idd: uuid,
+					data: rows[i],
+					_parser: this._process_custom_xml_row,   // cell parser method
+					_locator: this._get_custom_xml_data        // data locator method
+				};
+				this.rowsAr[uuid]=rows[i];// store id reference
+			}
+			this.render_dataset();// force update of grid's view after data loading
+			this._parsing=false;
+		}
+
+		mygrid._process_custom_xml_row=function(r, xml) {
+			
+			var frName = this.xmlLoader.doXPath("./description/deviceType", xml)[0];
+//alert(frName.firstChild.data);
+			var modelName = this.xmlLoader.doXPath("./description/modelName", xml)[0];
+			var imgUrl = this.xmlLoader.doXPath("./description/imageUrl", xml)[0];
+			var devState = this.xmlLoader.doXPath("./state", xml)[0];
+//alert(imgUrl.firstChild.data);
+			var strAr = [  
+				"/static/images/" + imgUrl.firstChild.data,
+				xml.getAttribute("name"),
+				devState.firstChild.data,
+				frName.firstChild.data,
+				modelName.firstChild.data,
+			];
+			// set just a plain array as no custom attributes are needed
+			r._attrs={};
+			for (j=0; j < r.childNodes.length; j++) r.childNodes[j]._attrs={};
+			// finish data loading 
+			this._fillRow(r, strAr);
+			return r;
+		}
+
+		mygrid.setMultiLine(false);
+		mygrid.enableDragAndDrop(true);
+		mygrid.init();
+		mygrid.setSkin("dhx_skyblue");
+	   	mygrid.load("/device", "custom_xml");
+
+	</script>
+</div>
+</body>
+</html>
